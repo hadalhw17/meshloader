@@ -68,6 +68,11 @@ if(USE_IMGUI)
     add_subdirectory(${PROJECT_SOURCE_DIR}/extern/imgui)
 endif()
 
+if(USE_GLM)
+    set(CONAN_EXTRA_REQUIRES ${CONAN_EXTRA_REQIUIRES}
+            glm/0.9.9.8)
+endif()
+
 if(USE_GLFW)
     set(CONAN_EXTRA_REQUIRES ${CONAN_EXTRA_REQUIRES}
         glfw/3.3.2@bincrafters/stable)
