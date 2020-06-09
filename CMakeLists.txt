@@ -45,7 +45,7 @@ option(ENABLE_PCH "Enable Precompiled Headers" OFF)
 if (ENABLE_PCH)
     # This sets a global PCH parameter, each project will build its own PCH, which
     # is a good idea if any #define's change
-    # 
+    #
     # consider breaking this out per project as necessary 
     target_precompile_headers(project_options INTERFACE <vector> <string> <map> <utility>)
 endif()
@@ -56,19 +56,26 @@ endif()
 set(CONAN_EXTRA_REQUIRES "")
 set(CONAN_EXTRA_OPTIONS "")
 
-if(CPP_STARTER_USE_IMGUI)
-    set(CONAN_EXTRA_REQUIRES ${CONAN_EXTRA_REQUIRES}
-        imgui/1.76@bincrafters/stable)
-
-    # set(CONAN_EXTRA_OPTIONS ${CONAN_EXTRA_OPTIONS} sfml:shared=False
-    # sfml:graphics=True sfml:audio=False sfml:window=True
-    # libalsa:disable_python=True)
+if(USE_IMGUI)
+    if(NOT EXISTS "${PROJECT_SOURCE_DIR}/extern/imgui")
+        set(CLONE_CMD "git")
+        set(CLONE_ARGS submodule add --force https://github.com/hadalhw17/imgui.git ${PROJECT_SOURCE_DIR}/extern/imgui)
+        MESSAGE(Executing command: "${CLONE_CMD} ${CLONE_ARGS}")
+        execute_process(
+                COMMAND ${CLONE_CMD} ${CLONE_ARGS}
+        )
+    endif()
+    add_subdirectory(${PROJECT_SOURCE_DIR}/extern/imgui)
 endif()
 
-if(CPP_STARTER_USE_SDL)
+if(USE_GLFW)
     set(CONAN_EXTRA_REQUIRES ${CONAN_EXTRA_REQUIRES}
-        sdl2/2.0.10@bincrafters/stable)
-    # set(CONAN_EXTRA_OPTIONS ${CONAN_EXTRA_OPTIONS} sdl2:wayland=True)
+        glfw/3.3.2@bincrafters/stable)
+endif()
+
+if(USE_GLAD)
+    set(CONAN_EXTRA_REQUIRES ${CONAN_EXTRA_REQUIRES}
+            glad/0.1.33)
 endif()
 
 
