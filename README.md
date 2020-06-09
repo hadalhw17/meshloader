@@ -1,7 +1,7 @@
 # cpp_base
 Ultimate C++ starter project template with CMake for graphics/game programming
 
-Uses conan to get such modules as glfw, spdlog, fmt, glad and docopt.
+Uses conan to get such modules as glfw, spdlog, fmt, glm, glad and docopt.
 For ImGui it uses CMake to add a submodule if you need it
 The reason why conan wasn't used for ImGui is because conan package does not contain imgui/examples directory, which is essential if you want to use your custom rendering backends
 
