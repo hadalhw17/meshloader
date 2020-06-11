@@ -5,7 +5,7 @@ project(myproject CXX)
 include(cmake/ProjectSettings.cmake)
 
 
-option(USE_CLANG "Use clang toolchain" ON)
+option(USE_CLANG "Use clang toolchain" OFF)
 if(USE_CLANG)
     include(cmake/ClangToolchain.cmake)
 endif()
