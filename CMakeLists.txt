@@ -14,8 +14,6 @@ endif()
 add_library(project_options INTERFACE)
 target_compile_features(project_options INTERFACE cxx_std_17)
 
-
-set(CMAKE_RUNTIME_OUTPUT_DIR ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/bin)
 #set_target_properties(
 #    PROPERTIES
 #    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIR})
