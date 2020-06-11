@@ -1,0 +1,31 @@
+---
+Checks:          '*,-fuchsia-*,-google-*,-zircon-*,-abseil-*,-modernize-use-trailing-return-type,-llvm-*, readability-identifier-naming'
+CheckOptions:
+  - { key: ClassMemberCase, value: CamelCase }
+  - { key: ClassMemberPrefix, value: m_ }
+  - { key: ClassMethodCase, value: CamelCase }
+  - { key: FunctionCase, value: camelBack }
+  - { key: ParameterCase, value: CamelCase }
+  - { key: ParameterPrefix, value: In }
+  - { key: PrivateMethodCase, value: camelBack }
+  - { key: PublicMemberCase, value: CamelCase }
+  - { key: PublicMemberPrefix, value: m_ }
+  - { key: PrivateMemberCase, value: camelBack }
+  - { key: PrivateMemberPrefix, value: m_ }
+  - { key: StaticVariableCase, value: CamelCase }
+  - { key: StaticVariablePrefix, value: s_ }
+  - { key: StructCase, value: CamelCase }
+  - { key: StructPrefix, value: S }
+  - { key: ClassCase, value: CamelCase }
+  - { key: ClassPrefix, value: C }
+  - { key: EnumCase, value: CamelCase }
+  - { key: EnumPrefix, value: E }
+  - { key: GlobalVariableCase, value: UPPER_CASE }
+  - { key: GlobalVariablePrefix, value: g_ }
+  - { key: VariableCase, value: camelBack }
+  - { key: VirtualMethodCase, value: CamelCase }
+  - { key: LocalVariableCase, value: camelBack }
+  - { key: LocalPointerCase, value: camelBack }
+  - { key: LocalPointerPrefix, value: p }
+WarningsAsErrors: '*'
+HeaderFilterRegex: ''
