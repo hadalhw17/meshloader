@@ -6,6 +6,8 @@
 
 [![Build status](https://ci.appveyor.com/api/projects/status/1x9n8t4jce9q4w4b/branch/master?svg=true)](https://ci.appveyor.com/project/hadalhw17/cpp-base/branch/master)
 
+![AppVeyor tests (compact)](https://img.shields.io/appveyor/tests/hadalhw17/cpp-base?compact_message)
+
 Ultimate C++ starter project template with CMake for graphics/game programming
 
 Uses conan to get such modules as glfw, spdlog, fmt, glm, glad and docopt.
