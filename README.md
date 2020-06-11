@@ -1,4 +1,7 @@
 # cpp_base
+
+[![Build Status](https://travis-ci.com/hadalhw17/cpp_base.svg?branch=master)](https://travis-ci.com/hadalhw17/cpp_base)
+
 Ultimate C++ starter project template with CMake for graphics/game programming
 
 Uses conan to get such modules as glfw, spdlog, fmt, glm, glad and docopt.
