@@ -13,14 +13,16 @@
 
 int main()
 {
-    VkApplicationInfo appInfo{VK_STRUCTURE_TYPE_APPLICATION_INFO};
+    VkApplicationInfo appInfo = {};
+    appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
     appInfo.apiVersion = VK_API_VERSION_1_1;
-    appInfo.applicationVersion = 0.1;
-    appInfo.engineVersion = 0.1;
+    appInfo.applicationVersion = 1u;
+    appInfo.engineVersion = 1u;
     appInfo.pApplicationName = "DemoApp";
     appInfo.pEngineName = "DemoEngine";
 
-    VkInstanceCreateInfo instanceInfo{VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO};
+    VkInstanceCreateInfo instanceInfo = {};
+    instanceInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
     instanceInfo.pApplicationInfo = &appInfo;
 
     VkInstance instance;
@@ -58,7 +60,8 @@ int main()
     spdlog::info("glm test: (10.f, 0.f, 1.f)+(13.f, 1.f, 55.f) = ({}, {}, {})", res_glm.x, res_glm.y, res_glm.z);
     spdlog::info("Hello {}!", "World");
     fmt::print("Hello {} from fmt", "World!");
-
+ 
+    bool show = true;
     while(!glfwWindowShouldClose(window))
     {
         glfwPollEvents();
@@ -67,7 +70,6 @@ int main()
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
-        bool show = true;
         ImGui::ShowDemoWindow(&show);
         ImGui::Render();
         glClear(GL_COLOR_BUFFER_BIT);

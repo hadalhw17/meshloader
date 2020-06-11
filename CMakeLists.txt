@@ -4,10 +4,17 @@ cmake_minimum_required(VERSION 3.15)
 project(myproject CXX)
 include(cmake/ProjectSettings.cmake)
 
+
+
 # Link this 'library' to set the c++ standard / compile-time options requested
 add_library(project_options INTERFACE)
 target_compile_features(project_options INTERFACE cxx_std_17)
 
+
+set(CMAKE_RUNTIME_OUTPUT_DIR ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/bin)
+#set_target_properties(
+#    PROPERTIES
+#    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIR})
 if(CMAKE_CXX_COMPILER_ID MATCHES ".*Clang")
     option(ENABLE_BUILD_WITH_TIME_TRACE "Enable -ftime-trace to generate time tracing .json files on clang" OFF)
     if (ENABLE_BUILD_WITH_TIME_TRACE)
@@ -15,6 +22,7 @@ if(CMAKE_CXX_COMPILER_ID MATCHES ".*Clang")
     endif()
 endif()
 
+option(WARNINGS_AS_ERRORS "Treat all warnigns as errors" FALSE)
 # Link this 'library' to use the warnings specified in CompilerWarnings.cmake
 add_library(project_warnings INTERFACE)
 
@@ -59,13 +67,12 @@ set(CONAN_EXTRA_OPTIONS "")
 if(USE_IMGUI)
     if(NOT EXISTS "${PROJECT_SOURCE_DIR}/extern/imgui")
         set(CLONE_CMD "git")
-        set(CLONE_ARGS submodule add --force https://github.com/hadalhw17/imgui.git ${PROJECT_SOURCE_DIR}/extern/imgui)
+        set(CLONE_ARGS submodule add --force https://github.com/ocornut/imgui.git ${PROJECT_SOURCE_DIR}/extern/imgui)
         MESSAGE(Executing command: "${CLONE_CMD} ${CLONE_ARGS}")
         execute_process(
                 COMMAND ${CLONE_CMD} ${CLONE_ARGS}
         )
     endif()
-    add_subdirectory(${PROJECT_SOURCE_DIR}/extern/imgui)
 endif()
 
 if(USE_GLM)

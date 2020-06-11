@@ -31,20 +31,37 @@ if(USE_VULKAN)
 endif()
 
 if(USE_IMGUI)
+    set(IMGUI_SRC "")
+    set(IMGUI_INCL "")
+    set(IMGUI_DIR ${PROJECT_SOURCE_DIR}/extern/imgui)
+    # IMGUI common source files
+    set(IMGUI_SRC ${IMGUI_SRC}
+        ${IMGUI_DIR}/imgui.cpp
+        ${IMGUI_DIR}/imgui_demo.cpp
+        ${IMGUI_DIR}/imgui_draw.cpp
+        ${IMGUI_DIR}/imgui_widgets.cpp)
+
+    # IMGUI backend specific sources
     if(USE_GLFW)
-        set(EXTERNAL_SRC ${EXTERNAL_SRC}
-                ${PROJECT_SOURCE_DIR}/extern/imgui/examples/imgui_impl_glfw.cpp)
+        set(IMGUI_SRC ${IMGUI_SRC}
+            ${IMGUI_DIR}/examples/imgui_impl_glfw.cpp)
     endif()
     if(USE_GLAD)
-        set(EXTERNAL_SRC ${EXTERNAL_SRC}
-                ${PROJECT_SOURCE_DIR}/extern/imgui/examples/imgui_impl_opengl3.cpp)
+        set(IMGUI_SRC ${IMGUI_SRC}
+            ${IMGUI_DIR}/examples/imgui_impl_opengl3.cpp)
     endif()
     if(USE_VULKAN)
-        set(EXTERNAL_SRC ${EXTERNAL_SRC}
-                ${PROJECT_SOURCE_DIR}/extern/imgui/examples/imgui_impl_vulkan.cpp)
+        set(IMGUI_SRC ${IMGUI_SRC}
+            ${IMGUI_DIR}/examples/imgui_impl_vulkan.cpp)
     endif()
+    set(IMGUI_INCL ${INCLUDE_DIRS}
+        ${IMGUI_DIR}/
+        ${IMGUI_DIR}/examples)
+
+    add_library(ImGui STATIC ${IMGUI_SRC})
+    target_include_directories(ImGui SYSTEM PUBLIC ${IMGUI_INCL})
+    target_link_libraries(ImGui PUBLIC project_options)
     set(CONAN_PACKAGES ${CONAN_PACKAGES} ImGui)
-    set(INCLUDE_DIRS ${INCLUDE_DIRS} ${PROJECT_SOURCE_DIR}/extern/imgui ${PROJECT_SOURCE_DIR}/extern/imgui/examples)
 endif()
 
 if(USE_GLFW)
