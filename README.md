@@ -2,6 +2,10 @@
 
 [![Build Status](https://travis-ci.com/hadalhw17/cpp_base.svg?branch=master)](https://travis-ci.com/hadalhw17/cpp_base)
 
+[![codecov](https://codecov.io/gh/hadalhw17/cpp_base/branch/master/graph/badge.svg)](https://codecov.io/gh/hadalhw17/cpp_base)
+
+[![Build status](https://ci.appveyor.com/api/projects/status/1x9n8t4jce9q4w4b/branch/master?svg=true)](https://ci.appveyor.com/project/hadalhw17/cpp-base/branch/master)
+
 Ultimate C++ starter project template with CMake for graphics/game programming
 
 Uses conan to get such modules as glfw, spdlog, fmt, glm, glad and docopt.
