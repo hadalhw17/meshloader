@@ -4,7 +4,7 @@
 
 [![codecov](https://codecov.io/gh/hadalhw17/meshloader/branch/master/graph/badge.svg)](https://codecov.io/gh/hadalhw17/meshloader)
 
-[![Build status](https://ci.appveyor.com/api/projects/status/1x9n8t4jce9q4w4b/branch/master?svg=true)](https://ci.appveyor.com/project/hadalhw17/cpp-base/branch/master)
+[![Build status](https://ci.appveyor.com/api/projects/status/25olixusgxtoue31/branch/master?svg=true)](https://ci.appveyor.com/project/hadalhw17/meshloader/branch/master)
 
 ![AppVeyor tests (compact)](https://img.shields.io/appveyor/tests/hadalhw17/cpp-base?compact_message)
 
