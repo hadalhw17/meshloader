@@ -4,7 +4,7 @@
 #include <functional>
 #include <thread>
 #include <string>
-
+#include <array>
 #include <fmt/format.h>
 
 namespace loader
