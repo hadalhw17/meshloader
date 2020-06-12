@@ -12,6 +12,8 @@ endif()
 
 # Link this 'library' to set the c++ standard / compile-time options requested
 add_library(project_options INTERFACE)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set_property(GLOBAL PROPERTY CXX_STANDARD 20)
 target_compile_features(project_options INTERFACE cxx_std_20)
 
 #set_target_properties(
