@@ -31,10 +31,10 @@ float3 toEulerAngles(const std::array<float, 4> &quaternion)
   // pitch (y-axis rotation)
   const auto sinp =
       2.F * (quaternion[3] * quaternion[1] - quaternion[2] * quaternion[0]);
-  if (std::abs(sinp) >= 1)
+  if (std::fabs(sinp) >= 1)
   {
     angles.y =
-        std::copysign<float>(PI_2, sinp);// use 90 degrees if out of range
+        std::copysign<float, float>(PI_2, sinp);// use 90 degrees if out of range
   }
   else
   {
@@ -43,9 +43,9 @@ float3 toEulerAngles(const std::array<float, 4> &quaternion)
 
   // yaw (z-axis rotation)
   const auto siny_cosp =
-      2 * (quaternion[3] * quaternion[2] + quaternion[0] * quaternion[1]);
+      2.F * (quaternion[3] * quaternion[2] + quaternion[0] * quaternion[1]);
   const auto cosy_cosp =
-      1 - 2 * (quaternion[1] * quaternion[1] + quaternion[2] * quaternion[2]);
+      1.F - 2.F * (quaternion[1] * quaternion[1] + quaternion[2] * quaternion[2]);
   angles.z = std::atan2(siny_cosp, cosy_cosp);
 
   angles.x *= TO_DEG;
