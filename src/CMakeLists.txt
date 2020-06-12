@@ -82,11 +82,20 @@ conan_basic_setup()
 #find_package(spdlog CONFIG REQUIRED)
 #find_package(fmt CONFIG REQUIRED)
 
-add_executable(intro main.cpp ${EXTERNAL_SRC} )
-include_directories(intro PRIVATE ${INCLUDE_DIRS})
-target_link_libraries(intro PRIVATE project_options project_warnings CONAN_PKG::docopt.cpp
-        CONAN_PKG::fmt CONAN_PKG::spdlog ${CONAN_PACKAGES})
+
+add_library(loader STATIC
+    gltf_loader.cpp
+    mesh_loader.cpp
+    mesh_tools.cpp
+    obj_loader.cpp
+
+    ${EXTERNAL_SRC} )
+include_directories(loader PRIVATE ${INCLUDE_DIRS})
+
+target_include_directories(loader SYSTEM PRIVATE ${PROJECT_SOURCE_DIR}/extern/tinygltf)
+target_link_libraries(loader PRIVATE project_options project_warnings CONAN_PKG::docopt.cpp
+    CONAN_PKG::fmt CONAN_PKG::spdlog ${CONAN_PACKAGES})
 
 if(USE_VULKAN)
-    target_link_libraries(intro PRIVATE Vulkan::Vulkan)
+    target_link_libraries(loader PRIVATE Vulkan::Vulkan)
 endif()
