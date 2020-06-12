@@ -34,7 +34,7 @@ float3 toEulerAngles(const std::array<float, 4> &quaternion)
   if (std::fabs(sinp) >= 1)
   {
     angles.y =
-        std::copysign<float, float>(PI_2, sinp);// use 90 degrees if out of range
+        std::copysignf(PI_2, sinp);// use 90 degrees if out of range
   }
   else
   {
