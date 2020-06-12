@@ -5,6 +5,7 @@
 #include <vector>
 #include <fstream>
 #include <sstream>
+#include <optional>
 
 #include "structures.hpp"
 /**

@@ -1,0 +1,2 @@
+#cmakedefine APP_PATH_DEF
+#cmakedefine APP_PATH "@APP_PATH@"

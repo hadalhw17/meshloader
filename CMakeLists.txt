@@ -123,3 +123,10 @@ if (ENABLE_UNITY)
     set_target_properties(loader PROPERTIES UNITY_BUILD ON)
 endif()
 
+option(APP_PATH_DEF "Define application path in the config" ON)
+if(APP_PATH_DEF)
+    set(APP_PATH ${PROJECT_SOURCE_DIR})
+endif()
+
+include_directories(src)
+configure_file(src/config.h.in ${PROJECT_SOURCE_DIR}/src/config.hpp @ONLY)

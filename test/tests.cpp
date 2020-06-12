@@ -2,12 +2,15 @@
 
 #include <catch2/catch.hpp>
 #include <optional>
+#include "config.hpp"
+#include "fmt/format.h"
 
 
 TEST_CASE("Loading valid obj model", "[obj]")
 {
   auto model =
-      loader::loadMesh("/home/hadalhw17/dev/meshloader/test/dragon.obj");
+      loader::loadMesh(
+          fmt::format("{}{}", APP_PATH, "/test/dragon.obj").c_str());
   REQUIRE(model.has_value( ));
   REQUIRE(model.value( ).meshes.size( ) == 1);
   REQUIRE(model.value( ).meshes[0].positions.size( ) ==
@@ -19,7 +22,7 @@ TEST_CASE("Loading valid obj model", "[obj]")
 TEST_CASE("Loading valid glTF model", "[glTF]")
 {
   auto model = loader::loadMesh(
-      "/home/hadalhw17/dev/meshloader/test/cube_gltf/Cube.gltf");
+      fmt::format("{}{}", APP_PATH, "/test/cube_gltf/Cube.gltf").c_str());
   REQUIRE(model.has_value( ));
   REQUIRE(model.value( ).meshes[0].positions.size( ) == 36);
   REQUIRE(model.value( ).meshes[0].normals.size( ) == 36);
@@ -35,13 +38,13 @@ TEST_CASE("Loading valid glTF model", "[glTF]")
 TEST_CASE("Loading invalid obj model", "[obj]")
 {
   auto model =
-      loader::loadMesh("/home/hadalhw17/dev/meshloader/test/asdddswdragon.obj");
+      loader::loadMesh("asdfewasdfesdf");
   REQUIRE(!model.has_value( ));
 }
 
 TEST_CASE("Loading invalid glTF model", "[glTF]")
 {
   auto model = loader::loadMesh(
-      "/home/hadalhw17/asdasdsdfgdev/meshloader/test/cube_gltf/Cube.gltf");
+      "asdajkgsdfnksjldfbnlekjnsd");
   REQUIRE(!model.has_value( ));
 }
