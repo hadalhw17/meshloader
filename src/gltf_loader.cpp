@@ -131,8 +131,8 @@ void loadTextures(std::vector<loader::Image> &InDst, std::vector<tinygltf::Image
   {
     InDst.emplace_back(loader::Image( ));
     loader::Image &img = InDst.back( );
-    img.height = static_cast<uint16_t>(sImg.height);
-    img.width = static_cast<uint16_t>(sImg.width);
+    img.height = static_cast<std::uint32_t>(sImg.height);
+    img.width = static_cast<std::uint32_t>(sImg.width);
     if (sImg.component != 4)
     {
       img.image.resize(img.width * img.height * 4U);
@@ -262,16 +262,17 @@ std::optional<loader::Model> loadGlTf(const char *InPath)
                                                   mesh.tangents[ind1],
                                                   mesh.tangents[ind] };
               calcBitan(norm[0], tan[0], mesh.bitangents[ind2]);
-              calcBitan(norm[0], tan[0], mesh.bitangents[ind1]);
-              calcBitan(norm[0], tan[0], mesh.bitangents[ind]);
+              calcBitan(norm[1], tan[1], mesh.bitangents[ind1]);
+              calcBitan(norm[2], tan[2], mesh.bitangents[ind]);
             }
           }
         };
 
         auto loadIndices = [&](auto templ) {
           using IndexType = decltype(templ);
+          using IndexTypePtr = const IndexType*;
           mesh.indices.resize(indexCount);
-          const auto *buf = static_cast<const IndexType *>(dataPtr);
+          const auto *buf = static_cast<IndexTypePtr>(dataPtr);
           for (size_t index = 0; auto &ind : mesh.indices)
           {
             ind = buf[index] + static_cast<IndexType>(vertexStart);

@@ -1,16 +1,12 @@
 #pragma once
-#include <vector>
+#include <compare>
 #include <cstdint>
+#include <fmt/format.h>
+#include <iostream>
+#include <vector>
 
 namespace loader
 {
-
-struct Vertex
-{
-  float px, py, pz;
-  float nx, ny, nz;
-  float tu, tv;
-};
 
 struct float3
 {
@@ -22,6 +18,10 @@ struct float3
     y = in[1];
     z = in[2];
   }
+
+  auto operator<=>(const float3 &rhs) const = default;
+  friend std::ostream&operator<<(std::ostream&, const float3&);
+
   float x, y, z;
 };
 
@@ -91,7 +91,7 @@ struct Mesh
 // 4 component image representation
 struct Image
 {
-  uint16_t width, height;
+  std::uint32_t width, height;
   std::vector<unsigned char> image;
   const char *name;
 };
@@ -102,4 +102,59 @@ struct Model
   std::vector<Material> materials;
   std::vector<Mesh> meshes;
 };
+
+enum class EDistanceType
+{
+  FACE = 0, // Hit in the face.
+  EDGE1 = 1,// Hit on the first edge.
+  EDGE2 = 2,// Hit on the second edge.
+  EDGE3 = 3,// Hit on the third edge.
+  VERT1 = 4,// Hit on the first vertex.
+  VERT2 = 5,// Hit on the second vertex.
+  VERT3 = 6 // Hit on the third vertex.
+};
+
+struct STriangleDistanceResult
+{
+  float distance;
+  EDistanceType hit_type;
+  float3 hit_point;
+};
+
+struct Vertex
+{
+  float3 position;
+  float3 normal;
+  float3 texCord;
+
+  auto operator<=>(const Vertex &rhs) const = default;
+  friend std::ostream&operator<<(std::ostream&, const Vertex&);
+};
+inline std::ostream &operator<<(std::ostream &os, const float3 &fl)
+{
+  const auto res = fmt::format("{{ x: {}, y: {}, z: {}}}", fl.x, fl.y, fl.z);
+  return os << res << std::endl;
 }
+
+inline std::ostream &operator<<(std::ostream &os, const Vertex &vert)
+{
+  return os << "position " << vert.position << " normal " << vert.normal
+            << " texture coordinate " << vert.texCord << std::endl;
+}
+
+struct VertexHash
+{
+  std::size_t operator( )(const Vertex &vertex) const
+  {
+    return static_cast<std::uint32_t>(vertex.position.x * 19965295109.F) ^
+           static_cast<std::uint32_t>(vertex.position.y * 18511065037.F) ^
+           static_cast<std::uint32_t>(vertex.position.z * 45183875657.F) ^
+           static_cast<std::uint32_t>(vertex.normal.x * 34699057009.F) ^
+           static_cast<std::uint32_t>(vertex.normal.y * 56587034149.F) ^
+           static_cast<std::uint32_t>(vertex.normal.z * 79652433737.F) ^
+           static_cast<std::uint32_t>(vertex.texCord.x * 13739426149.F) ^
+           static_cast<std::uint32_t>(vertex.texCord.y * 59901554101.F) ^
+           static_cast<std::uint32_t>(vertex.texCord.z * 94773864931.F);
+  }
+};
+}// namespace loader
