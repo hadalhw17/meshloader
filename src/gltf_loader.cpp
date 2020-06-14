@@ -75,7 +75,7 @@ void getAttribute(std::vector<T> &attribute, tinygltf::Model &gltfMesh, tinygltf
       static_cast<unsigned long>(posAccess.ByteStride(posView)) / sizeof(float);
   for (size_t a = 0; a < posAccess.count; ++a)
   {
-    const T fPos = T(&pos[a * stride]);
+    const T fPos = T{&pos[a * stride]};
     attribute[a] = fPos;
   }
 }
@@ -241,13 +241,13 @@ std::optional<loader::Model> loadGlTf(const char *InPath)
                                                   mesh.texCords[ind] };
 
               auto [tan, bitan] = calculateTangentBitangent(pos, tex);
-              mesh.tangents[ind2] = tan;
+              mesh.tangents[ind2] = float4{tan};
               mesh.bitangents[ind2] = bitan;
 
-              mesh.tangents[ind1] = tan;
+              mesh.tangents[ind1] = float4{tan};
               mesh.bitangents[ind1] = bitan;
 
-              mesh.tangents[ind] = tan;
+              mesh.tangents[ind] = float4{tan};
               mesh.bitangents[ind] = bitan;
             }
             else

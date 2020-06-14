@@ -13,4 +13,9 @@ float3 cross(float3 a, float3 b)
 
   return ret;
 }
+
+[[nodiscard]]inline float dot(float3 a, float3 b)
+{
+  return a.x * b.x + a.x * b.y + a.z * b.z;
+}
 }

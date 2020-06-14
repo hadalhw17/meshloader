@@ -4,6 +4,8 @@
 #include <fmt/format.h>
 #include <iostream>
 #include <vector>
+#include <unordered_map>
+#include <utility>
 
 namespace loader
 {
@@ -12,7 +14,8 @@ struct float3
 {
   float3( ) = default;
   float3(float _x, float _y, float _z) : x(_x), y(_y), z(_z) {}
-  float3(const float *in)
+  explicit float3(float _x) : x(_x), y(_x), z(_x) {}
+  explicit float3(const float *in)
   {
     x = in[0];
     y = in[1];
@@ -20,6 +23,26 @@ struct float3
   }
 
   auto operator<=>(const float3 &rhs) const = default;
+  [[nodiscard]] auto operator+(const float3 &rhs) const
+  {
+    return float3{ x + rhs.x, y + rhs.y, z + rhs.z };
+  }
+  [[nodiscard]] auto operator+(const float rhs) const
+  {
+    return float3(rhs) + *this;
+  }
+  [[nodiscard]] auto operator-(const float3 &rhs) const
+  {
+    return float3{ x - rhs.x, y - rhs.y, z - rhs.z };
+  }
+  [[nodiscard]] auto operator*(const float3 &rhs) const
+  {
+    return float3{ x * rhs.x, y * rhs.y, z * rhs.z };
+  }
+  [[nodiscard]] auto operator*(const float rhs) const
+  {
+    return float3(rhs) * (*this);
+  }
   friend std::ostream &operator<<(std::ostream &, const float3 &);
 
   float x, y, z;
@@ -27,8 +50,8 @@ struct float3
 
 struct AABB
 {
-  float3 min = { 1e+6, 1e+6, 1e+6 };
-  float3 max = { -1e+6, -1e+6, -1e+6 };
+  float3 min{ 1e+6F, 1e+6F, 1e+6F };
+  float3 max{ -1e+6F, -1e+6F, -1e+6F };
 };
 
 struct float2
@@ -49,8 +72,15 @@ struct float2
 struct float4
 {
   float4( ) = default;
-  float4(float3 a) : x(a.x), y(a.y), z(a.z), w(1.f) {}
+  explicit float4(float3 a) : x(a.x), y(a.y), z(a.z), w(1.f) {}
   float4(float _x, float _y, float _z, float _w) : x(_x), y(_y), z(_z), w(_w) {}
+  explicit float4(const float *in)
+  {
+    x = in[0];
+    y = in[1];
+    z = in[2];
+    w = in[3];
+  }
   float x, y, z, w;
 };
 
@@ -86,14 +116,14 @@ struct Mesh
   // 3 components for tangent and 1 for the sign to compute bitangent
   std::vector<float4> tangents;
   std::vector<float3> bitangents;
-  std::vector<uint32_t> indices;
+  std::vector<std::uint32_t> indices;
 
   std::vector<Primitive> primitives;
 
-  float3 position = { 0.f, 0.f, 0.f };
+  float3 position{ 0.f, 0.f, 0.f };
   // Rotation is defined as euler angles
-  float3 rotation = { 0.f, 0.f, 0.f };
-  float3 scale = { 1.f, 1.f, 1.f };
+  float3 rotation{ 0.f, 0.f, 0.f };
+  float3 scale{ 1.f, 1.f, 1.f };
 
   AABB boundingBox;
 };
@@ -171,4 +201,43 @@ struct VertexHash
            static_cast<std::uint32_t>(vertex.texCord.y * 59901554101.F);
   }
 };
+
+using Edge = std::pair<Vertex, Vertex>;
+using EdgeIndexed = std::pair<std::uint32_t, std::uint32_t>;
+
+struct IndexedEdgeHash
+{
+  std::size_t operator( )(const EdgeIndexed &edge) const
+  {
+    auto pack = [](const uint32_t &v1, const uint32_t &v2) {
+      uint64_t r = v1;
+      r <<= 32;
+      r |= v2;
+      return r;
+    };
+    std::uint64_t packed = pack(edge.first, edge.second);
+    std::uint64_t v = packed * 3935559000370003845 + 2691343689449507681;
+
+    v ^= v >> 21;
+    v ^= v << 37;
+    v ^= v >>  4;
+
+    v *= 4768777513237032717;
+
+    v ^= v << 20;
+    v ^= v >> 41;
+    v ^= v <<  5;
+    return v;
+  }
+};
+
+struct EdgeHash
+{
+  std::size_t operator( )(const Edge &edge) const
+  {
+    VertexHash hash;
+    return hash(edge.first) ^ hash(edge.second);
+  }
+};
+
 }// namespace loader
