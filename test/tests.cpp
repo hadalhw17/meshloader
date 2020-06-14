@@ -135,7 +135,17 @@ TEST_CASE("Unsigned distance to triangle", "[udist]")
 
   const auto distance =
       loader::triangleUnsignedDistance(loader::float3{ -1.F }, positions);
-  std::cout << distance.distance << std::endl;
+  const auto distanceFace =
+      loader::triangleUnsignedDistance(loader::float3{ 0.5F }, positions);
+  auto adjacency = loader::getEdgeAdjacencyIndexed(mesh.indices);
+  auto pseudoNormalFace = loader::calculatePseudoNormal(
+      distanceFace, 0, mesh.positions, mesh.indices, adjacency);
+  auto pseudoNormalVert1 = loader::calculatePseudoNormal(
+      distance, 0, mesh.positions, mesh.indices, adjacency);
+  REQUIRE(distanceFace.hit_type == loader::EDistanceType::FACE);
+  REQUIRE(pseudoNormalFace == mesh.normals[0]);
+  REQUIRE(pseudoNormalFace == pseudoNormalVert1);
+  std::cout << distanceFace.distance << std::endl;
 }
 
 TEST_CASE("Testing vertex adjacency list indexed", "[vert_adj_indexed]")
@@ -168,7 +178,7 @@ TEST_CASE("Edge adjacency list test indexed", "[edge_adjacency_indexed]")
   auto model = loader::loadMesh(
       fmt::format("{}{}", APP_PATH, "/test/cube.obj").c_str( ));
   auto &mesh = model.value( ).meshes[0];
-  auto adjList = loader::getEdgeAdjacencyIndexed(mesh.indices);
+  auto [vert, adjList] = loader::getEdgeAdjacencyIndexed(mesh.indices);
   REQUIRE(!adjList.empty( ));
 
   for (const auto &item : adjList)

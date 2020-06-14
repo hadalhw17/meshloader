@@ -3,7 +3,7 @@
 
 namespace loader
 {
-float3 cross(float3 a, float3 b)
+[[nodiscard]] inline float3 cross(float3 a, float3 b)
 {
   float3 ret = { };
 
@@ -14,8 +14,14 @@ float3 cross(float3 a, float3 b)
   return ret;
 }
 
-[[nodiscard]]inline float dot(float3 a, float3 b)
+[[nodiscard]] inline float dot(float3 a, float3 b)
 {
   return a.x * b.x + a.x * b.y + a.z * b.z;
 }
+
+[[nodiscard]] inline float3 normalize(const float3 a)
+{
+  float aDotA = dot(a, a);
+  return a / sqrt(aDotA);
 }
+}// namespace loader

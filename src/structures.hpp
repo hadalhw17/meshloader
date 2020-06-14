@@ -3,9 +3,9 @@
 #include <cstdint>
 #include <fmt/format.h>
 #include <iostream>
-#include <vector>
 #include <unordered_map>
 #include <utility>
+#include <vector>
 
 namespace loader
 {
@@ -42,6 +42,19 @@ struct float3
   [[nodiscard]] auto operator*(const float rhs) const
   {
     return float3(rhs) * (*this);
+  }
+  [[nodiscard]] auto operator/(const float3 &rhs) const
+  {
+    return float3{ x / rhs.x, y / rhs.y, z / rhs.z };
+  }
+  [[nodiscard]] auto operator/(const float rhs) const
+  {
+    return float3{ x / rhs, y / rhs, z / rhs };
+  }
+  auto &operator+=(const float3 &rhs)
+  {
+    *this = *this + rhs;
+    return *this;
   }
   friend std::ostream &operator<<(std::ostream &, const float3 &);
 
@@ -220,13 +233,13 @@ struct IndexedEdgeHash
 
     v ^= v >> 21;
     v ^= v << 37;
-    v ^= v >>  4;
+    v ^= v >> 4;
 
     v *= 4768777513237032717;
 
     v ^= v << 20;
     v ^= v >> 41;
-    v ^= v <<  5;
+    v ^= v << 5;
     return v;
   }
 };
