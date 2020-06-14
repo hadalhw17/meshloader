@@ -20,7 +20,7 @@ struct float3
   }
 
   auto operator<=>(const float3 &rhs) const = default;
-  friend std::ostream&operator<<(std::ostream&, const float3&);
+  friend std::ostream &operator<<(std::ostream &, const float3 &);
 
   float x, y, z;
 };
@@ -34,6 +34,16 @@ struct AABB
 struct float2
 {
   float x, y;
+
+  float2( ) = default;
+  float2(float _x, float _y) : x(_x), y(_y) {}
+  float2(const float *in)
+  {
+    x = in[0];
+    y = in[1];
+  }
+  auto operator<=>(const float2 &) const = default;
+  friend std::ostream &operator<<(std::ostream &, const float2 &);
 };
 
 struct float4
@@ -71,7 +81,7 @@ struct Mesh
 {
   std::vector<float3> positions;
   std::vector<float3> normals;
-  std::vector<float3> texCords;
+  std::vector<float2> texCords;
 
   // 3 components for tangent and 1 for the sign to compute bitangent
   std::vector<float4> tangents;
@@ -125,11 +135,16 @@ struct Vertex
 {
   float3 position;
   float3 normal;
-  float3 texCord;
+  float2 texCord;
 
   auto operator<=>(const Vertex &rhs) const = default;
-  friend std::ostream&operator<<(std::ostream&, const Vertex&);
+  friend std::ostream &operator<<(std::ostream &, const Vertex &);
 };
+inline std::ostream &operator<<(std::ostream &os, const float2 &fl)
+{
+  const auto res = fmt::format("{{ x: {}, y: {}}}", fl.x, fl.y);
+  return os << res << std::endl;
+}
 inline std::ostream &operator<<(std::ostream &os, const float3 &fl)
 {
   const auto res = fmt::format("{{ x: {}, y: {}, z: {}}}", fl.x, fl.y, fl.z);
@@ -153,8 +168,7 @@ struct VertexHash
            static_cast<std::uint32_t>(vertex.normal.y * 56587034149.F) ^
            static_cast<std::uint32_t>(vertex.normal.z * 79652433737.F) ^
            static_cast<std::uint32_t>(vertex.texCord.x * 13739426149.F) ^
-           static_cast<std::uint32_t>(vertex.texCord.y * 59901554101.F) ^
-           static_cast<std::uint32_t>(vertex.texCord.z * 94773864931.F);
+           static_cast<std::uint32_t>(vertex.texCord.y * 59901554101.F);
   }
 };
 }// namespace loader

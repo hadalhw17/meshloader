@@ -10,7 +10,7 @@ namespace loader
 {
 std::pair<float3, float3>
 calculateTangentBitangent(const std::array<float3, 3> &pos,
-                          const std::array<float3, 3> &tex)
+                          const std::array<float2, 3> &tex)
 {
   float3 posEdge1{ };
   float3 posEdge2{ };
@@ -84,11 +84,11 @@ bool calcBitan(const float3 &norm, const float3 &tan, float3 &bitan)
 
   return true;
 }
-std::unordered_multimap<Vertex, Vertex, VertexHash> getVertexAdjacency(
+std::unordered_map<Vertex, std::vector<Vertex>, VertexHash> getVertexAdjacency(
     const std::vector<float3> &positions, const std::vector<float3> &normals,
-    const std::vector<float3> &uvs, const std::vector<std::uint32_t> &indices)
+    const std::vector<float2> &uvs, const std::vector<std::uint32_t> &indices)
 {
-  std::unordered_multimap<Vertex, Vertex, VertexHash> ret;
+  std::unordered_map<Vertex, std::vector<Vertex>, VertexHash> ret;
   bool hasNormals = !normals.empty();
   bool hasUvs = !uvs.empty();
 
@@ -99,24 +99,25 @@ std::unordered_multimap<Vertex, Vertex, VertexHash> getVertexAdjacency(
     const auto v3 = indices[i + 2];
 
     const float3 empty{0.f, 0.f, 0.f};
+    const float2 empty1{0.f, 0.f};
 
     Vertex vertex1{ .position{ positions[v1] },
                     .normal{ hasNormals ? normals[v1] : empty },
-                    .texCord{ hasUvs ? uvs[v1] : empty } };
+                    .texCord{ hasUvs ? uvs[v1] : empty1 } };
 
     Vertex vertex2{ .position{ positions[v2] },
                     .normal{ hasNormals ?  normals[v2] : empty },
-                    .texCord{ hasUvs ? uvs[v2] : empty } };
+                    .texCord{ hasUvs ? uvs[v2] : empty1 } };
 
     Vertex vertex3{ .position{ positions[v3] },
                     .normal{ hasNormals ? normals[v3] : empty },
-                    .texCord{ hasUvs ? uvs[v3] : empty } };
-    ret.insert({vertex1, vertex2});
-    ret.insert({vertex1, vertex3});
-    ret.insert({vertex2, vertex1});
-    ret.insert({vertex2, vertex3});
-    ret.insert({vertex3, vertex1});
-    ret.insert({vertex3, vertex2});
+                    .texCord{ hasUvs ? uvs[v3] : empty1 } };
+    ret[vertex1].push_back(vertex2);
+    ret[vertex1].push_back(vertex3);
+    ret[vertex2].push_back(vertex1);
+    ret[vertex2].push_back(vertex3);
+    ret[vertex3].push_back(vertex1);
+    ret[vertex3].push_back(vertex2);
   }
 
   return ret;

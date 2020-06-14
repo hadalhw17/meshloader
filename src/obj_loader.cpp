@@ -96,7 +96,7 @@ CObjModel::LoadObjFromFile(const char *InFileName)
   std::cout << "Loading \"" << InFileName << "\" .. " << std::endl;
 
   std::vector<float3> positions;
-  std::vector<float3> texcoords;
+  std::vector<float2> texcoords;
   std::vector<float3> normals;
   std::vector<SObjVertex> vertices;
   VertexMap vertexMap;
@@ -117,7 +117,7 @@ CObjModel::LoadObjFromFile(const char *InFileName)
     }
     else if (prefix == "vt")
     {
-      float3 tc{ };
+      float2 tc{ };
       line >> tc.x >> tc.y;
       texcoords.push_back(tc);
     }
@@ -189,7 +189,7 @@ CObjModel::LoadObjFromFile(const char *InFileName)
     }
   };
 
-  auto copyTexCords = [&texcoords, &vertices](std::vector<float3> &InDist) {
+  auto copyTexCords = [&texcoords, &vertices](std::vector<float2> &InDist) {
     for (size_t i = 0; i < InDist.size( ); ++i)
     {
       InDist[i] = texcoords[vertices[i].uv - 1];

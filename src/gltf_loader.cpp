@@ -75,7 +75,7 @@ void getAttribute(std::vector<T> &attribute, tinygltf::Model &gltfMesh, tinygltf
       static_cast<unsigned long>(posAccess.ByteStride(posView)) / sizeof(float);
   for (size_t a = 0; a < posAccess.count; ++a)
   {
-    T fPos = T(&pos[a * stride]);
+    const T fPos = T(&pos[a * stride]);
     attribute[a] = fPos;
   }
 }
@@ -236,7 +236,7 @@ std::optional<loader::Model> loadGlTf(const char *InPath)
               const std::array<float3, 3> pos = { mesh.positions[ind2],
                                                   mesh.positions[ind1],
                                                   mesh.positions[ind] };
-              const std::array<float3, 3> tex = { mesh.texCords[ind2],
+              const std::array<float2, 3> tex = { mesh.texCords[ind2],
                                                   mesh.texCords[ind1],
                                                   mesh.texCords[ind] };
 
