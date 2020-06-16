@@ -91,10 +91,10 @@ add_library(loader STATIC
 
     ${EXTERNAL_SRC} )
 include_directories(loader PRIVATE ${INCLUDE_DIRS})
-
+find_package(Threads REQUIRED)
 target_include_directories(loader SYSTEM PRIVATE ${PROJECT_SOURCE_DIR}/extern/tinygltf)
 target_link_libraries(loader PRIVATE project_options project_warnings CONAN_PKG::docopt.cpp
-    CONAN_PKG::fmt CONAN_PKG::spdlog ${CONAN_PACKAGES})
+    CONAN_PKG::fmt CONAN_PKG::spdlog Threads::Threads -ltbb ${CONAN_PACKAGES})
 
 if(USE_VULKAN)
     target_link_libraries(loader PRIVATE Vulkan::Vulkan)

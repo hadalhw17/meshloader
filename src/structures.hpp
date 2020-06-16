@@ -11,69 +11,79 @@
 namespace loader
 {
 
-struct float3
+template <typename T>
+struct Vec3
 {
-  float3( ) = default;
-  float3(float _x, float _y, float _z) : x(_x), y(_y), z(_z) {}
-  explicit float3(float _x) : x(_x), y(_x), z(_x) {}
-  explicit float3(const float *in)
+  Vec3( ) = default;
+  Vec3(T _x, T _y, T _z) : x(_x), y(_y), z(_z) {}
+  explicit Vec3(T _x) : x(_x), y(_x), z(_x) {}
+  explicit Vec3(const T *in)
   {
     x = in[0];
     y = in[1];
     z = in[2];
   }
 
-  auto operator<=>(const float3 &rhs) const = default;
-  [[nodiscard]] auto operator+(const float3 &rhs) const
+  auto operator<=>(const Vec3<T> &rhs) const = default;
+  template<typename E>
+  [[nodiscard]] auto operator+(const Vec3<E> &rhs) const
   {
-    return float3{ x + rhs.x, y + rhs.y, z + rhs.z };
+    return Vec3{ x + static_cast<T>(rhs.x), y + static_cast<T>(rhs.y), z + static_cast<T>(rhs.z) };
   }
-  [[nodiscard]] auto operator+(const float rhs) const
+  [[nodiscard]] auto operator+(const T rhs) const
   {
-    return float3{ x + rhs, y + rhs, z + rhs };
+    return Vec3{ x + static_cast<T>(rhs), y + static_cast<T>(rhs), z + static_cast<T>(rhs) };
   }
-  [[nodiscard]] auto operator-(const float3 &rhs) const
+  template<typename E>
+  [[nodiscard]] auto operator-(const Vec3<E> &rhs) const
   {
-    return float3{ x - rhs.x, y - rhs.y, z - rhs.z };
+    return Vec3{ x - static_cast<T>(rhs.x), y - static_cast<T>(rhs.y), z - static_cast<T>(rhs.z) };
   }
-  [[nodiscard]] auto operator*(const float3 &rhs) const
+  template<typename E>
+  [[nodiscard]] auto operator*(const Vec3<E> &rhs) const
   {
-    return float3{ x * rhs.x, y * rhs.y, z * rhs.z };
+    return Vec3{ x * static_cast<T>(rhs.x), y * static_cast<T>(rhs.y), z * static_cast<T>(rhs.z) };
   }
-  [[nodiscard]] auto operator*(const float rhs) const
+  [[nodiscard]] auto operator*(const T rhs) const
   {
-    return float3{ x * rhs, y * rhs, z * rhs };
+    return Vec3{ x * rhs, y * rhs, z * rhs };
   }
-  [[nodiscard]] auto operator/(const float3 &rhs) const
+  template<typename E>
+  [[nodiscard]] auto operator/(const Vec3<E> &rhs) const
   {
-    return float3{ x / rhs.x, y / rhs.y, z / rhs.z };
+    return Vec3{ x / static_cast<T>(rhs.x), y / static_cast<T>(rhs.y), z / static_cast<T>(rhs.z) };
   }
-  [[nodiscard]] auto operator/(const float rhs) const
+  [[nodiscard]] auto operator/(const T rhs) const
   {
-    return float3{ x / rhs, y / rhs, z / rhs };
+    return Vec3{ x / rhs, y / rhs, z / rhs };
   }
-  [[nodiscard]] static float3 max(const float3 &lhs, const float3 &rhs)
+  [[nodiscard]] static Vec3 max(const Vec3 &lhs, const Vec3 &rhs)
   {
     return { std::max(lhs.x, rhs.x), std::max(lhs.y, rhs.y),
              std::max(lhs.z, rhs.z) };
   }
 
-  [[nodiscard]] static float3 min(const float3 &lhs, const float3 &rhs)
+  [[nodiscard]] static Vec3 min(const Vec3<T> &lhs, const Vec3<T> &rhs)
   {
     return { std::min(lhs.x, rhs.x), std::min(lhs.y, rhs.y),
              std::min(lhs.z, rhs.z) };
   }
-  auto &operator+=(const float3 &rhs)
+  template<typename E>
+  auto &operator+=(const Vec3<E> &rhs)
   {
     this->x += rhs.x;
     this->y += rhs.y;
     this->z += rhs.z;
     return *this;
   }
-  friend std::ostream &operator<<(std::ostream &, const float3 &);
+  template<typename E>
+  friend std::ostream &operator<<(std::ostream &, const Vec3<E> &);
 
-  float x, y, z;
+  T x, y, z;
 };
+
+using float3 = Vec3<float>;
+using uint3 = Vec3<uint32_t>;
 
 struct AABB
 {
@@ -209,7 +219,8 @@ inline std::ostream &operator<<(std::ostream &os, const float2 &fl)
   const auto res = fmt::format("{{ x: {}, y: {}}}", fl.x, fl.y);
   return os << res << std::endl;
 }
-inline std::ostream &operator<<(std::ostream &os, const float3 &fl)
+template<typename T>
+inline std::ostream &operator<<(std::ostream &os, const Vec3<T> &fl)
 {
   const auto res = fmt::format("{{ x: {}, y: {}, z: {}}}", fl.x, fl.y, fl.z);
   return os << res << std::endl;

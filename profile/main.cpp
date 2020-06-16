@@ -9,7 +9,7 @@
 int main()
 {
   auto model = loader::loadMesh(
-      fmt::format("{}{}", APP_PATH, "/test/bunny.obj").c_str( ));
+      fmt::format("{}{}", APP_PATH, "/test/cat.obj").c_str( ));
   auto &mesh = model.value( ).meshes[0];
   const auto sdf = loader::generateSignedDistanceFieldFromMesh(mesh, 100);
   loader::saveSdfAsPPMA(sdf, fmt::format("{}{}", APP_PATH, "/profile/sdf.ppm").c_str());

@@ -95,7 +95,7 @@ getPseudoNormalEdge(const STriangleDistanceResult &res, const std::uint32_t tri,
                     const std::vector<float3> &faceNormals);
 
 [[nodiscard]] std::vector<float>
-generateSignedDistanceFieldFromMesh(Mesh &mesh, const std::size_t dim);
+generateSignedDistanceFieldFromMesh(Mesh &mesh, const std::uint32_t dim);
 
 void saveSdfAsPPMA(const std::vector<float> &sdf, const std::string &path);
 

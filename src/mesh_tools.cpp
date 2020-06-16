@@ -2,6 +2,8 @@
 
 #include "math_helper.hpp"
 
+#include <execution>
+#include <algorithm>
 #include <array>
 #include <cassert>
 #include <cmath>
@@ -573,8 +575,8 @@ float3 getPseudoNormalVertex(
 
     auto length = [](const float3 &vert) { return sqrtf(dot(vert, vert)); };
     // Do I need this?
-    auto incidentAngle = acos(dot(e0, e1) / (length(e0) * length(e1)));
-    p_normal += faceNormals[firstVertex / 3] /* * incidentAngle */;
+    auto incidentAngle = acosf(dot(e0, e1) / (length(e0) * length(e1)));
+    p_normal += faceNormals[firstVertex / 3] * incidentAngle;
   }
 
   return normalize(p_normal);
@@ -586,7 +588,7 @@ float3 getPseudoNormalEdge(const STriangleDistanceResult &res,
                            const std::vector<std::uint32_t> &indices,
                            const std::vector<float3> &faceNormals)
 {
-  float3 pseudo_normal{ 0.f };
+  float3 pseudo_normal{ 0.F };
   const auto vertexOffset = tri % 3;
   const auto firstVertex = tri - vertexOffset;
   auto const &curr_tri = float3{ static_cast<float>(firstVertex),
@@ -633,7 +635,7 @@ float3 getPseudoNormalEdge(const STriangleDistanceResult &res,
 }
 
 std::vector<float> generateSignedDistanceFieldFromMesh(Mesh &mesh,
-                                                       const std::size_t dim)
+                                                       const std::uint32_t dim)
 {
   const auto meshExtent = mesh.boundingBox.extent( );
   // Calculate the dimension of each voxel.
@@ -645,50 +647,62 @@ std::vector<float> generateSignedDistanceFieldFromMesh(Mesh &mesh,
   const auto faceNormals =
       generateMeshFaceNormals(mesh.indices, mesh.positions);
   const auto &numIndices = mesh.indices.size( );
-  // Loop over z, y, x
-  for (size_t k = 0; k < dim; ++k)
-  {
-    for (size_t j = 0; j < dim; ++j)
+  std::vector<float3> gridCoordinates(dim * dim * dim);
+
+  auto calcDistance = [&](const float3 &voxelCoordinate) {
+    float minDistance = std::numeric_limits<float>::infinity( );
+    float sign = 1.f;
+    // For each triangle.
+    for (std::uint32_t index = 0; index < numIndices; index += 3)
     {
-      for (size_t i = 0; i < dim; ++i)
+      const auto unsignedDistance = triangleUnsignedDistance(
+          voxelCoordinate, mesh.positions[mesh.indices[index]],
+          mesh.positions[mesh.indices[index + 1]],
+          mesh.positions[mesh.indices[index + 2]]);
+
+      if (std::fabs(unsignedDistance.distance) < minDistance)
+      {
+        minDistance = std::fabs(unsignedDistance.distance);
+        // Can't be smaller than 0, so bye!!
+        if (minDistance <= 1e-4F)
+        {
+          break;
+        }
+        const auto pseudoNormal =
+            calculatePseudoNormal(unsignedDistance, index, mesh.positions,
+                                  mesh.indices, faceNormals, adjacencyMatrices);
+        const auto rayDir = voxelCoordinate - unsignedDistance.hit_point;
+        sign = std::copysignf(sign, dot(rayDir, pseudoNormal));
+      }
+    }
+    const auto xyz = voxelCoordinate / gridStep;
+    const size_t voxelIndex = static_cast<size_t>(xyz.x) + dim * (static_cast<size_t>(xyz.y) + dim * static_cast<size_t>(xyz.z));
+    sdf[voxelIndex] = sign * minDistance;
+  };
+
+  // Loop over z, y, x
+  for (uint32_t k = 0; k < dim; ++k)
+  {
+    for (uint32_t j = 0; j < dim; ++j)
+    {
+      for (uint32_t i = 0; i < dim; ++i)
       {
         const auto voxelIndex = i + dim * (j + dim * k);
-        const auto voxelCoord = gridStep * float3{ i, j, k };
-        float minDistance = std::numeric_limits<float>::infinity( );
-        float sign = 1.f;
-        // For each triangle.
-        for (std::uint32_t index = 0; index < numIndices; index += 3)
-        {
-          const auto unsignedDistance = triangleUnsignedDistance(
-              voxelCoord, mesh.positions[mesh.indices[index]],
-              mesh.positions[mesh.indices[index + 1]],
-              mesh.positions[mesh.indices[index + 2]]);
-
-          if (std::fabs(unsignedDistance.distance) < minDistance)
-          {
-            minDistance = std::fabs(unsignedDistance.distance);
-            // Can't be smaller than 0, so bye!!
-            if(minDistance <= 1e-4F)
-            {
-              minDistance = 0.F;
-              break;
-            }
-            const auto pseudoNormal = calculatePseudoNormal(
-                unsignedDistance, index, mesh.positions, mesh.indices,
-                faceNormals, adjacencyMatrices);
-            const auto rayDir = voxelCoord - unsignedDistance.hit_point;
-            sign = std::copysignf(sign, dot(rayDir, pseudoNormal));
-          }
-        }
-        sdf[voxelIndex] = sign * minDistance;
+        const auto voxelCoord = gridStep * uint3{ i, j, k };
+        gridCoordinates[voxelIndex] = voxelCoord;
       }
     }
   }
+
+  std::for_each(std::execution::par_unseq,
+      std::begin(gridCoordinates), std::end(gridCoordinates),
+      [&](const float3 &voxelCoordinate) { calcDistance(voxelCoordinate); });
   return sdf;
 }
+
 void saveSdfAsPPMA(const std::vector<float> &sdf, const std::string &path)
 {
-  const size_t sdfDim =
+  const auto sdfDim =
       static_cast<std::size_t>(std::floor(std::pow(sdf.size( ), 1.F / 3.F)));
   std::ofstream ppm_file;
   ppm_file.open(path);
@@ -709,8 +723,12 @@ void saveSdfAsPPMA(const std::vector<float> &sdf, const std::string &path)
       {
         for (size_t iz = 0; iz < sdfDim; ++iz)
         {
-          texture_2d[counter] +=
-              sdf[ix + sdfDim * (iy + sdfDim * iz)] * 10000.f;
+          const auto curr = sdf[ix + sdfDim * (iy + sdfDim * (iz))] ;
+          if(curr < 1e-4F)
+          {
+            texture_2d[counter] = 255;
+            break;
+          }
         }
         counter++;
       }
