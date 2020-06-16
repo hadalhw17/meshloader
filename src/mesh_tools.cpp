@@ -1,10 +1,11 @@
 #include "mesh_tools.hpp"
 
-#include "math.h"
 #include "math_helper.hpp"
 
 #include <array>
+#include <cassert>
 #include <cmath>
+#include <fstream>
 #include <iostream>
 
 namespace loader
@@ -93,14 +94,15 @@ std::unordered_map<Vertex, std::vector<Vertex>, VertexHash> getVertexAdjacency(
   const auto hasNormals = !normals.empty( );
   const auto hasUvs = !uvs.empty( );
 
-  for (size_t i = 0; i < indices.size( ); i += 3)
+  const auto numIndices = indices.size( );
+  for (size_t i = 0; i < numIndices; i += 3)
   {
     const auto v1 = indices[i];
     const auto v2 = indices[i + 1];
     const auto v3 = indices[i + 2];
 
-    const float3 empty{ 0.f, 0.f, 0.f };
-    const float2 empty1{ 0.f, 0.f };
+    const float3 empty{ };
+    const float2 empty1{ };
 
     const Vertex vertex1{ .position{ positions[v1] },
                           .normal{ hasNormals ? normals[v1] : empty },
@@ -132,14 +134,15 @@ std::unordered_map<Edge, std::vector<Edge>, EdgeHash> getEdgeAdjacency(
   const auto hasNormals = !normals.empty( );
   const auto hasUvs = !uvs.empty( );
 
-  for (size_t i = 0; i < indices.size( ); i += 3)
+  const auto &numIndices = indices.size( );
+  for (size_t i = 0; i < numIndices; i += 3)
   {
-    const auto v1 = indices[i];
-    const auto v2 = indices[i + 1];
-    const auto v3 = indices[i + 2];
+    const auto &v1 = indices[i];
+    const auto &v2 = indices[i + 1];
+    const auto &v3 = indices[i + 2];
 
-    const float3 empty{ 0.f, 0.f, 0.f };
-    const float2 empty1{ 0.f, 0.f };
+    const float3 empty{ };
+    const float2 empty1{ };
 
     const Vertex vertex1{ .position{ positions[v1] },
                           .normal{ hasNormals ? normals[v1] : empty },
@@ -167,22 +170,21 @@ std::unordered_map<Edge, std::vector<Edge>, EdgeHash> getEdgeAdjacency(
   return ret;
 }
 
-STriangleDistanceResult
-triangleUnsignedDistance(float3 from,
-                         const std::array<float3, 3> &vertexPositions)
+STriangleDistanceResult triangleUnsignedDistance(const float3 &from,
+                                                 const float3 &v0,
+                                                 const float3 &v1,
+                                                 const float3 &v2)
 {
-  float3 a = vertexPositions[0];
-  float3 b = vertexPositions[1];
-  float3 c = vertexPositions[2];
-  auto diff = a - from;
-  auto edge0 = b - a;
-  auto edge1 = c - a;
-  auto a00 = dot(edge0, edge0);
-  auto a01 = dot(edge0, edge1);
-  auto a11 = dot(edge1, edge1);
-  auto b0 = dot(diff, edge0);
-  auto b1 = dot(diff, edge1);
-  auto det = fabsf(a00 * a11 - a01 * a01);
+  const auto diff = v0 - from;
+  const auto edge0 = v1 - v0;
+  const auto edge1 = v2 - v0;
+  const auto a00 = dot(edge0, edge0);
+  const auto a01 = dot(edge0, edge1);
+  const auto a11 = dot(edge1, edge1);
+  const auto b0 = dot(diff, edge0);
+  const auto b1 = dot(diff, edge1);
+  const auto det = fabsf(a00 * a11 - a01 * a01);
+
   auto s = a01 * b1 - a11 * b0;
   auto t = a01 * b0 - a00 * b1;
 
@@ -428,7 +430,7 @@ triangleUnsignedDistance(float3 from,
     }
   }
 
-  auto pnearest = a + edge0 * s + edge1 * t;
+  const auto pnearest = v0 + edge0 * s + edge1 * t;
   STriangleDistanceResult res{ };
   res.hit_type = hit_type;
   res.hit_point = pnearest;
@@ -444,74 +446,97 @@ getEdgeAdjacencyIndexed(std::vector<std::uint32_t> &indices)
 
   EdgeAdjacencyMatrix ret;
 
-  for (std::size_t index = 0; index < indices.size( ); index += 3)
+  const auto &numIndex = indices.size( );
+  for (std::uint32_t index = 0; index < numIndex; index += 3)
   {
     const auto i1 = indices[index];
     const auto i2 = indices[index + 1];
     const auto i3 = indices[index + 2];
 
-    auto parseVertex = [&](auto edge, auto vertex) {
-      const auto arr = vertexTable[vertex];
+    auto parseVertex = [&](const auto edge, const auto vertex) {
+      const auto arr = vertexTable[indices[vertex]];
       for (const auto &item : arr)
       {
-        const EdgeIndexed place{ std::min(vertex, item),
-                                 std::max(vertex, item) };
+        const auto cmpVert = item;
+        const EdgeIndexed place{ std::min(vertex, cmpVert),
+                                 std::max(vertex, cmpVert) };
         if (edge != place)
         {
           ret[edge].insert(place);
         }
       }
     };
-    auto parseVertices = [&](auto edge) {
-      parseVertex(edge, edge.first);
-      parseVertex(edge, edge.second);
+    auto parseVertices = [&](const auto edge, const auto index1,
+                             const auto index2) {
+      parseVertex(edge, index1);
+      parseVertex(edge, index2);
     };
 
     const EdgeIndexed e1{ std::min(i1, i2), std::max(i2, i1) };
     const EdgeIndexed e2{ std::min(i2, i3), std::max(i3, i2) };
     const EdgeIndexed e3{ std::min(i3, i1), std::max(i1, i3) };
 
-    parseVertices(e1);
-    parseVertices(e2);
-    parseVertices(e3);
+    parseVertices(e1, index, index + 1);
+    parseVertices(e2, index + 1, index + 2);
+    parseVertices(e3, index + 2, index + 1);
   }
 
   return std::pair{ std::move(vertexTable), std::move(ret) };
 }
-float3 calculateFaceNormal(std::array<float3, 3> face)
+float3 calculateFaceNormal(const float3 &v0, const float3 &v1, const float3 &v2)
 {
-  const auto e0 = face[0] - face[1];
-  const auto e1 = face[0] - face[2];
+  const auto e0 = v0 - v1;
+  const auto e1 = v0 - v2;
 
   return normalize(cross(e0, e1));
+}
+
+std::vector<float3>
+generateMeshFaceNormals(const std::vector<std::uint32_t> &indices,
+                        const std::vector<float3> &positions)
+{
+  const auto &numIndices = indices.size( );
+  std::vector<float3> normals(numIndices / 3);
+  // Iterate over all faces
+  for (std::size_t index = 0; index < numIndices; index += 3)
+  {
+    const auto &v0 = positions[indices[index]];
+    const auto &v1 = positions[indices[index + 1]];
+    const auto &v2 = positions[indices[index + 2]];
+
+    normals[index / 3] = calculateFaceNormal(v0, v1, v2);
+  }
+  return normals;
 }
 
 float3 calculatePseudoNormal(
     const STriangleDistanceResult &distanceRes, const std::uint32_t index,
     const std::vector<float3> &positions, const std::vector<uint32_t> &indices,
+    const std::vector<float3> &faceNormals,
     const std::pair<VertexAdjacencyMatrix<std::uint32_t>, EdgeAdjacencyMatrix>
         &adjacency)
 {
-  const auto ind = indices[index];
-  const auto ind1 = indices[index + 1];
-  const auto ind2 = indices[index + 2];
-  const auto v0 = positions[ind];
-  const auto v1 = positions[ind1];
-  const auto v2 = positions[ind2];
+  const auto &ind = indices[index];
+  const auto &ind1 = indices[index + 1];
+  const auto &ind2 = indices[index + 2];
   switch (distanceRes.hit_type)
   {
   case EDistanceType::VERT1:
-    return getPseudoNormalVertex(ind, adjacency.first, positions);
+    return getPseudoNormalVertex(ind, adjacency.first, positions, indices,
+                                 faceNormals);
   case EDistanceType::VERT2:
-    return getPseudoNormalVertex(ind1, adjacency.first, positions);
+    return getPseudoNormalVertex(ind1, adjacency.first, positions, indices,
+                                 faceNormals);
   case EDistanceType::VERT3:
-    return getPseudoNormalVertex(ind2, adjacency.first, positions);
+    return getPseudoNormalVertex(ind2, adjacency.first, positions, indices,
+                                 faceNormals);
   case EDistanceType::EDGE1:
   case EDistanceType::EDGE2:
   case EDistanceType::EDGE3:
-    return getPseudoNormalEdge(distanceRes, index, adjacency.second, positions);
+    return getPseudoNormalEdge(distanceRes, index, adjacency.second, indices,
+                               faceNormals);
   case EDistanceType::FACE:
-    return calculateFaceNormal({ v0, v1, v2 });
+    return faceNormals[index / 3];
   default:
     throw std::runtime_error{ "ERROR: Unknown distance type!" };
   }
@@ -519,54 +544,37 @@ float3 calculatePseudoNormal(
 float3 getPseudoNormalVertex(
     const std::uint32_t v_nearest,
     const VertexAdjacencyMatrix<std::uint32_t> &vertexAdjacencyMatrix,
-    const std::vector<float3> &positions)
+    const std::vector<float3> &positions,
+    const std::vector<std::uint32_t> &indices,
+    const std::vector<float3> &faceNormals)
 {
   float3 p_normal{ };
   // auto v_nearest = mesh->m_Vertices[tri];
 
+  // This returns an index to an index buffer position.
   for (const auto &adj_tri : vertexAdjacencyMatrix.at(v_nearest))
   {
 
     // This will adjust index for the first vertex of a face.
     const auto offset = adj_tri % 3;
-    const float3 curr_tr{ static_cast<float>(adj_tri - offset),
-                          static_cast<float>(adj_tri - offset + 1),
-                          static_cast<float>(adj_tri - offset + 2) };
+    const auto firstVertex = adj_tri - offset;
 
-    std::uint32_t vert0{ };
-    std::uint32_t vert1{ };
+    const auto vert0{ indices[firstVertex] };
+    const auto vert1{ indices[firstVertex + 1] };
+    const auto vert2{ indices[firstVertex + 2] };
 
-    // This looks like some bs!!
-    // I don't trust this code
-    if (v_nearest == static_cast<std::uint32_t>(curr_tr.x))
-    {
-      vert0 = static_cast<std::uint32_t>(curr_tr.y);
-      vert1 = static_cast<std::uint32_t>(curr_tr.z);
-    }
-    else if (v_nearest == static_cast<std::uint32_t>(curr_tr.y))
-    {
-      vert0 = static_cast<std::uint32_t>(curr_tr.x);
-      vert1 = static_cast<std::uint32_t>(curr_tr.z);
-    }
-    else if (v_nearest == static_cast<std::uint32_t>(curr_tr.z))
-    {
-      vert0 = static_cast<std::uint32_t>(curr_tr.x);
-      vert1 = static_cast<std::uint32_t>(curr_tr.y);
-    }
-    else
-    {
-      continue;
-    }
-
+    // This implementation looks less bs than the previous one
+    // And has better performance due to less branching.
     const auto v0 = positions[vert0];
     const auto v1 = positions[vert1];
-    const auto v2 = positions[v_nearest];
-    auto e0 = v0 - v2;
-    auto e1 = v1 - v2;
+    const auto v2 = positions[vert2];
+    const auto e0 = v0 - v1;
+    const auto e1 = v0 - v2;
 
-    auto length = [](const float3 &vert) { return sqrt(dot(vert, vert)); };
+    auto length = [](const float3 &vert) { return sqrtf(dot(vert, vert)); };
+    // Do I need this?
     auto incidentAngle = acos(dot(e0, e1) / (length(e0) * length(e1)));
-    p_normal += calculateFaceNormal({ v0, v1, v2 }) * incidentAngle;
+    p_normal += faceNormals[firstVertex / 3] /* * incidentAngle */;
   }
 
   return normalize(p_normal);
@@ -575,47 +583,153 @@ float3 getPseudoNormalVertex(
 float3 getPseudoNormalEdge(const STriangleDistanceResult &res,
                            const std::uint32_t tri,
                            const EdgeAdjacencyMatrix &adjacencyMatrix,
-                           const std::vector<float3> &positions)
+                           const std::vector<std::uint32_t> &indices,
+                           const std::vector<float3> &faceNormals)
 {
   float3 pseudo_normal{ 0.f };
   const auto vertexOffset = tri % 3;
-  auto const &curr_tri = float3{ static_cast<float>(tri - vertexOffset), static_cast<float>(tri - vertexOffset + 1),
-                                 static_cast<float>(tri - vertexOffset + 2) };
+  const auto firstVertex = tri - vertexOffset;
+  auto const &curr_tri = float3{ static_cast<float>(firstVertex),
+                                 static_cast<float>(firstVertex + 1),
+                                 static_cast<float>(firstVertex + 2) };
 
-  std::uint32_t vert0{ };
-  std::uint32_t vert1{ };
+  auto initVerts = [&]( ) -> std::pair<std::uint32_t, std::uint32_t> {
+    std::uint32_t vert0{ };
+    std::uint32_t vert1{ };
+    if (res.hit_type == EDistanceType::EDGE1)
+    {
+      vert0 = indices[static_cast<std::size_t>(curr_tri.x)];
+      vert1 = indices[static_cast<std::size_t>(curr_tri.y)];
+    }
+    else if (res.hit_type == EDistanceType::EDGE2)
+    {
+      vert0 = indices[static_cast<std::size_t>(curr_tri.y)];
+      vert1 = indices[static_cast<std::size_t>(curr_tri.z)];
+    }
+    else if (res.hit_type == EDistanceType::EDGE3)
+    {
+      vert0 = indices[static_cast<std::size_t>(curr_tri.z)];
+      vert1 = indices[static_cast<std::size_t>(curr_tri.x)];
+    }
+    return vert0 <= vert1
+               ? std::pair<std::uint32_t, std::uint32_t>{ vert0, vert1 }
+               : std::pair<std::uint32_t, std::uint32_t>{ vert1, vert0 };
+  };
 
-  if (res.hit_type == EDistanceType::EDGE1)
-  {
-    vert0 = static_cast<std::uint32_t>(curr_tri.x);
-    vert1 = static_cast<std::uint32_t>(curr_tri.y);
-  }
-  else if (res.hit_type == EDistanceType::EDGE2)
-  {
-    vert0 = static_cast<std::uint32_t>(curr_tri.y);
-    vert1 = static_cast<std::uint32_t>(curr_tri.z);
-  }
-  else if (res.hit_type == EDistanceType::EDGE3)
-  {
-    vert0 = static_cast<std::uint32_t>(curr_tri.z);
-    vert1 = static_cast<std::uint32_t>(curr_tri.x);
-  }
-
-  const EdgeIndexed edge{ std::min(vert0, vert1), std::max(vert0, vert1) };
+  const auto [vert0, vert1] = initVerts( );
+  const EdgeIndexed edge{ vert0, vert1 };
   const auto &adjs = adjacencyMatrix.at(edge);
-
+  assert(!adjs.empty( ));
   for (const auto &adj_tri : adjs)
   {
-    const auto i0 = vert0 == adj_tri.first || vert1 == adj_tri.first
-                        ? adj_tri.second
-                        : adj_tri.first;
-    const auto v0 = positions[vert0];
-    const auto v1 = positions[vert1];
-    const auto v2 = positions[i0];
+    const auto vertex = vert0 == adj_tri.first || vert1 == adj_tri.first
+                            ? adj_tri.second
+                            : adj_tri.first;
+    const auto triIndex = (vertex - (vertex % 3)) / 3;
 
-    pseudo_normal += calculateFaceNormal(std::array{ v0, v1, v2 });
+    pseudo_normal += faceNormals[triIndex];
   }
   return normalize(pseudo_normal);
+}
+
+std::vector<float> generateSignedDistanceFieldFromMesh(Mesh &mesh,
+                                                       const std::size_t dim)
+{
+  const auto meshExtent = mesh.boundingBox.extent( );
+  // Calculate the dimension of each voxel.
+  const auto gridStep = meshExtent / static_cast<float>(dim - 1);
+  // Initialise the resulting vector.
+  std::vector<float> sdf(dim * dim * dim);
+  assert(sdf.size( ) == dim * dim * dim);
+  const auto adjacencyMatrices = getEdgeAdjacencyIndexed(mesh.indices);
+  const auto faceNormals =
+      generateMeshFaceNormals(mesh.indices, mesh.positions);
+  const auto &numIndices = mesh.indices.size( );
+  // Loop over z, y, x
+  for (size_t k = 0; k < dim; ++k)
+  {
+    for (size_t j = 0; j < dim; ++j)
+    {
+      for (size_t i = 0; i < dim; ++i)
+      {
+        const auto voxelIndex = i + dim * (j + dim * k);
+        const auto voxelCoord = gridStep * float3{ i, j, k };
+        float minDistance = std::numeric_limits<float>::infinity( );
+        float sign = 1.f;
+        // For each triangle.
+        for (std::uint32_t index = 0; index < numIndices; index += 3)
+        {
+          const auto unsignedDistance = triangleUnsignedDistance(
+              voxelCoord, mesh.positions[mesh.indices[index]],
+              mesh.positions[mesh.indices[index + 1]],
+              mesh.positions[mesh.indices[index + 2]]);
+
+          if (std::fabs(unsignedDistance.distance) < minDistance)
+          {
+            minDistance = std::fabs(unsignedDistance.distance);
+            // Can't be smaller than 0, so bye!!
+            if(minDistance <= 1e-4F)
+            {
+              minDistance = 0.F;
+              break;
+            }
+            const auto pseudoNormal = calculatePseudoNormal(
+                unsignedDistance, index, mesh.positions, mesh.indices,
+                faceNormals, adjacencyMatrices);
+            const auto rayDir = voxelCoord - unsignedDistance.hit_point;
+            sign = std::copysignf(sign, dot(rayDir, pseudoNormal));
+          }
+        }
+        sdf[voxelIndex] = sign * minDistance;
+      }
+    }
+  }
+  return sdf;
+}
+void saveSdfAsPPMA(const std::vector<float> &sdf, const std::string &path)
+{
+  const size_t sdfDim =
+      static_cast<std::size_t>(std::floor(std::pow(sdf.size( ), 1.F / 3.F)));
+  std::ofstream ppm_file;
+  ppm_file.open(path);
+  // Write the file header.
+  ppm_file << "P3"
+           << "\n";
+  ppm_file << sdfDim << " " << sdfDim << "\n";
+  ppm_file << "255"
+           << "\n";
+  auto *texture_2d = new float[sdfDim * sdfDim];
+  memset(texture_2d, 0, sdfDim * sdfDim * sizeof(float));
+  size_t counter = 0;
+  // for (size_t iz = 0; iz < sdfDim; iz++)
+  {
+    for (size_t iy = 0; iy < sdfDim; iy++)
+    {
+      for (size_t ix = 0; ix < sdfDim; ix++)
+      {
+        for (size_t iz = 0; iz < sdfDim; ++iz)
+        {
+          texture_2d[counter] +=
+              sdf[ix + sdfDim * (iy + sdfDim * iz)] * 10000.f;
+        }
+        counter++;
+      }
+    }
+  }
+  for (size_t y{ 0 }; y < sdfDim; ++y)
+  {
+    for (size_t x{ 0 }; x < sdfDim; ++x)
+    {
+      ppm_file << texture_2d[x + (sdfDim * y)] << " "
+               << texture_2d[x + (sdfDim * y)] << " "
+               << texture_2d[x + (sdfDim * y)] << " ";
+    }
+    ppm_file << "\n";
+  }
+
+  // Close the file.
+  ppm_file.close( );
+  delete[] texture_2d;
 }
 
 }// namespace loader

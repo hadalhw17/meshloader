@@ -189,3 +189,14 @@ TEST_CASE("Edge adjacency list test indexed", "[edge_adjacency_indexed]")
     // Have 4 neighbours, while the rest have 2
   }
 }
+
+TEST_CASE("SDF calculation", "[sdf]")
+{
+  auto model = loader::loadMesh(
+      fmt::format("{}{}", APP_PATH, "/test/bunny.obj").c_str( ));
+  auto &mesh = model.value( ).meshes[0];
+  const auto sdf = loader::generateSignedDistanceFieldFromMesh(mesh, 100);
+  //REQUIRE(sdf.size( ) == 16 * 16 * 16);
+  //loader::saveSdfAsPPMA(sdf, std::string(APP_PATH) + "/test/sdf.ppm", 1000,
+                        //1000);
+}

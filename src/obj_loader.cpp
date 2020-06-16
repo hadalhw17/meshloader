@@ -101,6 +101,7 @@ CObjModel::LoadObjFromFile(const char *InFileName)
   std::vector<SObjVertex> vertices;
   VertexMap vertexMap;
 
+  AABB &meshBox = mesh.boundingBox;
   std::string lineStr;
   while (std::getline(is, lineStr))
   {
@@ -113,6 +114,7 @@ CObjModel::LoadObjFromFile(const char *InFileName)
     {
       float3 p{ };
       line >> p.x >> p.y >> p.z;
+      meshBox.extend(p);
       positions.push_back(p);
     }
     else if (prefix == "vt")

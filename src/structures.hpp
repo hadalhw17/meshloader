@@ -1,4 +1,5 @@
 #pragma once
+#include <mutex>
 #include <compare>
 #include <cstdint>
 #include <fmt/format.h>
@@ -29,7 +30,7 @@ struct float3
   }
   [[nodiscard]] auto operator+(const float rhs) const
   {
-    return float3(rhs) + *this;
+    return float3{ x + rhs, y + rhs, z + rhs };
   }
   [[nodiscard]] auto operator-(const float3 &rhs) const
   {
@@ -41,7 +42,7 @@ struct float3
   }
   [[nodiscard]] auto operator*(const float rhs) const
   {
-    return float3(rhs) * (*this);
+    return float3{ x * rhs, y * rhs, z * rhs };
   }
   [[nodiscard]] auto operator/(const float3 &rhs) const
   {
@@ -51,9 +52,22 @@ struct float3
   {
     return float3{ x / rhs, y / rhs, z / rhs };
   }
+  [[nodiscard]] static float3 max(const float3 &lhs, const float3 &rhs)
+  {
+    return { std::max(lhs.x, rhs.x), std::max(lhs.y, rhs.y),
+             std::max(lhs.z, rhs.z) };
+  }
+
+  [[nodiscard]] static float3 min(const float3 &lhs, const float3 &rhs)
+  {
+    return { std::min(lhs.x, rhs.x), std::min(lhs.y, rhs.y),
+             std::min(lhs.z, rhs.z) };
+  }
   auto &operator+=(const float3 &rhs)
   {
-    *this = *this + rhs;
+    this->x += rhs.x;
+    this->y += rhs.y;
+    this->z += rhs.z;
     return *this;
   }
   friend std::ostream &operator<<(std::ostream &, const float3 &);
@@ -65,6 +79,13 @@ struct AABB
 {
   float3 min{ 1e+6F, 1e+6F, 1e+6F };
   float3 max{ -1e+6F, -1e+6F, -1e+6F };
+
+  [[nodiscard]] auto extent( ) const { return max - min; }
+  auto extend(const float3 &v)
+  {
+    min = float3::min(min, v);
+    max = float3::max(max, v);
+  }
 };
 
 struct float2
@@ -252,5 +273,144 @@ struct EdgeHash
     return hash(edge.first) ^ hash(edge.second);
   }
 };
+
+/*
+* Contains information about the current job.
+* startx - x id of starting batch
+* starty - y id of starting batch
+* maxx - how many batches to process accross x
+* maxy - how many batches to process accross y
+*/
+struct BatchJob
+{
+  int startX = -1, startY = -1, startZ = -1;
+  int maxX = -1 , maxY = -1, maxZ = -1;
+};
+
+
+/*
+* Ring buffer implementation inspired by the one on the lab.
+* The whole process is pretty simple, split y-axis ono 2 equal rectangular areas,
+* which could either be rendered concurrently, or divided further.
+* Pretty much like a hierarchical grid, but hierarchical stripes instead.
+*/
+class RingBuffer
+{
+  private:
+  int ringSize;
+  int head, tail;
+  BatchJob* ringBuffer;
+  int processedJobs;
+  std::recursive_mutex ringLock;
+  private:
+  int NextPosition(int pos);
+  bool IsRingFull();
+  bool IsRingEmpty();
+  public:
+  RingBuffer(int size);
+  ~RingBuffer(void);
+  BatchJob RemoveFromRing();
+  bool AddToRing(BatchJob val);
+  bool IsRingEmptyAndJobsCompleted();  //Return whether ring is empty and no jobs are being processed
+  void NotifyOfJobCompletion(); //Reduces the count on the number of jobs being processed
+};
+
+
+/*
+* Just increament a positino counter, or wrap it to the beginning.
+*/
+inline int RingBuffer::NextPosition(int pos)
+{
+  return (pos + 1) % ringSize;
+}
+
+/*
+* Ring is full if the head is one position behind tail.
+*/
+inline bool RingBuffer::IsRingFull()
+{
+  return tail == NextPosition(head);
+}
+
+/*
+* Ring is empty if head is at the same position as tail.
+*/
+inline bool RingBuffer::IsRingEmpty()
+{
+  return head == tail;
+}
+
+inline RingBuffer::RingBuffer(int size)
+{
+  ringSize = size;
+  ringBuffer = new BatchJob[size];
+  processedJobs = 0;
+  head = tail = 0;
+}
+
+inline RingBuffer::~RingBuffer(void)
+{
+  delete[] ringBuffer;
+}
+
+/*
+* Remove empy job if ring is empty.
+*/
+inline BatchJob RingBuffer::RemoveFromRing()
+{
+  ringLock.lock();
+  if (IsRingEmpty())
+  {
+    ringLock.unlock();
+    return BatchJob();
+  }
+  BatchJob val = ringBuffer[tail];
+  tail = NextPosition(tail);
+  processedJobs++;
+  ringLock.unlock();
+  return val;
+}
+
+
+/*
+* Add job to the ring, in case the rign in not full and the job is actually valid, i.e. has some batches to render
+*/
+inline bool RingBuffer::AddToRing(BatchJob val)
+{
+  ringLock.lock();
+  if (IsRingFull() || val.startY == val.maxY)
+  {
+    ringLock.unlock();
+    return false;
+  }
+  ringBuffer[head] = val;
+  head = NextPosition(head);
+  ringLock.unlock();
+  return true;
+}
+
+
+/*
+* Should we terminate our main loop?
+*/
+inline bool RingBuffer::IsRingEmptyAndJobsCompleted()
+{
+  ringLock.lock();
+  bool res = IsRingEmpty() && (processedJobs == 0);
+  ringLock.unlock();
+  return res;
+}
+
+
+/*
+* Decrement the counter of current jobs available.
+*/
+inline void RingBuffer::NotifyOfJobCompletion()
+{
+  ringLock.lock();
+  processedJobs--;
+  ringLock.unlock();
+}
+
 
 }// namespace loader

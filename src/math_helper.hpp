@@ -14,14 +14,15 @@ namespace loader
   return ret;
 }
 
-[[nodiscard]] inline float dot(float3 a, float3 b)
+[[nodiscard]] inline float dot(const float3& a, const float3& b)
 {
-  return a.x * b.x + a.x * b.y + a.z * b.z;
+  return a.x * b.x + a.y * b.y + a.z * b.z;
 }
 
 [[nodiscard]] inline float3 normalize(const float3 a)
 {
   float aDotA = dot(a, a);
-  return a / sqrt(aDotA);
+  return a / sqrtf(aDotA);
 }
+
 }// namespace loader

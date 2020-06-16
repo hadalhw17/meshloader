@@ -115,6 +115,7 @@ endif()
 
 
 add_subdirectory(src)
+add_subdirectory(profile)
 
 
 option(ENABLE_UNITY "Enable Unity builds of projects" OFF)
