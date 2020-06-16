@@ -193,7 +193,7 @@ TEST_CASE("Edge adjacency list test indexed", "[edge_adjacency_indexed]")
 TEST_CASE("SDF calculation", "[sdf]")
 {
   auto model = loader::loadMesh(
-      fmt::format("{}{}", APP_PATH, "/test/bunny.obj").c_str( ));
+      fmt::format("{}{}", APP_PATH, "/test/cube.obj").c_str( ));
   auto &mesh = model.value( ).meshes[0];
   const auto sdf = loader::generateSignedDistanceFieldFromMesh(mesh, 100);
   //REQUIRE(sdf.size( ) == 16 * 16 * 16);
