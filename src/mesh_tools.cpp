@@ -723,10 +723,10 @@ void saveSdfAsPPMA(const std::vector<float> &sdf, const std::string &path)
       {
         for (size_t iz = 0; iz < sdfDim; ++iz)
         {
-          const auto curr = sdf[ix + sdfDim * (iy + sdfDim * (iz))] ;
-          if(curr < 1e-4F)
+          const auto curr = sdf[ix + sdfDim * (iy + sdfDim * (iz))]*10000 ;
+          //if(curr < 1e-4F)
           {
-            texture_2d[counter] = 255;
+            texture_2d[counter] +=curr;
             break;
           }
         }

@@ -1,11 +1,11 @@
 #include "obj_loader.hpp"
 
 #include <algorithm>
-#include <functional>
-#include <thread>
-#include <string>
 #include <array>
 #include <fmt/format.h>
+#include <functional>
+#include <string>
+#include <thread>
 
 namespace loader
 {
@@ -28,7 +28,7 @@ std::vector<std::string> tokenize(const std::string &InString,
     if (pos != lastPos || InIncludeEmpty)
     {
       auto str = InString.substr(lastPos, pos - lastPos);
-      str.erase(std::remove(str.begin( ), str.end( ), '-'), str.end( ));
+      // str.erase(std::remove(str.begin( ), str.end( ), '-'), str.end( ));
       tokens.push_back(str);
     }
     lastPos = pos;
@@ -43,12 +43,11 @@ std::vector<std::string> tokenize(const std::string &InString,
 }
 
 /// Convert a string into an unsigned integer value
-auto toUInt(const std::string &InStr)
+auto toInt(const std::string &InStr)
 {
-  char *end_ptr = nullptr;
-  const auto result =
-      static_cast<std::uint32_t>(std::strtoul(InStr.c_str( ), &end_ptr, 10));
-  if (*end_ptr != '\0')
+  size_t end_ptr{ };
+  const auto result = std::stoi(InStr, &end_ptr);
+  if (end_ptr != 0)
   {
     std::puts(
         fmt::format("Could not parse integer value: {} \n", InStr).c_str( ));
@@ -65,21 +64,20 @@ CObjModel::SObjVertex::SObjVertex(const std::string &InString)
     std::puts(fmt::format("Invalid vertex data: {} \n", InString).c_str( ));
   }
 
-  p = toUInt(tokens[0]);
+  p = toInt(tokens[0]);
 
   if (tokens.size( ) >= 2 && !tokens[1].empty( ))
   {
-    uv = toUInt(tokens[1]);
+    uv = toInt(tokens[1]);
   }
 
   if (tokens.size( ) >= 3 && !tokens[2].empty( ))
   {
-    n = toUInt(tokens[2]);
+    n = toInt(tokens[2]);
   }
 }
 
-std::optional<Model>
-CObjModel::LoadObjFromFile(const char *InFileName)
+std::optional<Model> CObjModel::LoadObjFromFile(const char *InFileName)
 {
   auto model = Model( );
   model.meshes.resize(1, { });
@@ -180,21 +178,30 @@ CObjModel::LoadObjFromFile(const char *InFileName)
   auto copyPositions = [&positions, &vertices](std::vector<float3> &InDist) {
     for (size_t i = 0; i < InDist.size( ); ++i)
     {
-      InDist[i] = positions[vertices[i].p - 1];
+      const auto p = vertices[i].p > 0 ? vertices[i].p - 1
+                                       : vertices.size( ) + vertices[i].p;
+
+      InDist[i] = positions[p];
     }
   };
 
   auto copyNorms = [&normals, &vertices](std::vector<float3> &InDist) {
     for (size_t i = 0; i < InDist.size( ); ++i)
     {
-      InDist[i] = normals[vertices[i].n - 1];
+      const auto p = vertices[i].n > 0 ? vertices[i].n - 1
+                                       : vertices.size( ) + vertices[i].n;
+
+      InDist[i] = normals[p];
     }
   };
 
   auto copyTexCords = [&texcoords, &vertices](std::vector<float2> &InDist) {
     for (size_t i = 0; i < InDist.size( ); ++i)
     {
-      InDist[i] = texcoords[vertices[i].uv - 1];
+      const auto p = vertices[i].uv > 0 ? vertices[i].uv - 1
+                                        : vertices.size( ) + vertices[i].uv;
+
+      InDist[i] = texcoords[p];
     }
   };
 
@@ -211,6 +218,10 @@ CObjModel::LoadObjFromFile(const char *InFileName)
   normLoader.join( );
   uvLoader.join( );
 #endif
+  // Since I am currently loading everything as a single mesh, then I need this
+  // default primitive for all indices.
+  Primitive prim{ 0, mesh.indices.size( ), -1 };
+  mesh.primitives.push_back(prim);
   return model;
 }
-}
+}// namespace loader

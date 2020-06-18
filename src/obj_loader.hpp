@@ -23,9 +23,9 @@ class CObjModel
   /// Vertex indices used by the OBJ format
   struct SObjVertex
   {
-    uint32_t p = ~0U;
-    uint32_t n = ~0U;
-    uint32_t uv = ~0U;
+    int p = -1;
+    int n = -1;
+    int uv = -1;
 
     inline SObjVertex( ) {}
 
