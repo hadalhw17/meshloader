@@ -5,6 +5,7 @@
 #include <fmt/format.h>
 #include <functional>
 #include <string>
+#include <cassert>
 #include <thread>
 
 namespace loader
@@ -28,7 +29,6 @@ std::vector<std::string> tokenize(const std::string &InString,
     if (pos != lastPos || InIncludeEmpty)
     {
       auto str = InString.substr(lastPos, pos - lastPos);
-      // str.erase(std::remove(str.begin( ), str.end( ), '-'), str.end( ));
       tokens.push_back(str);
     }
     lastPos = pos;
@@ -47,10 +47,11 @@ auto toInt(const std::string &InStr)
 {
   size_t end_ptr{ };
   const auto result = std::stoi(InStr, &end_ptr);
-  if (end_ptr != 0)
+  if (end_ptr == 0)
   {
     std::puts(
         fmt::format("Could not parse integer value: {} \n", InStr).c_str( ));
+    assert(end_ptr == 0);
   }
   return result;
 }
@@ -179,7 +180,7 @@ std::optional<Model> CObjModel::LoadObjFromFile(const char *InFileName)
     for (size_t i = 0; i < InDist.size( ); ++i)
     {
       const auto p = vertices[i].p > 0 ? vertices[i].p - 1
-                                       : vertices.size( ) + vertices[i].p;
+                                       : positions.size( ) + vertices[i].p;
 
       InDist[i] = positions[p];
     }
@@ -189,7 +190,7 @@ std::optional<Model> CObjModel::LoadObjFromFile(const char *InFileName)
     for (size_t i = 0; i < InDist.size( ); ++i)
     {
       const auto p = vertices[i].n > 0 ? vertices[i].n - 1
-                                       : vertices.size( ) + vertices[i].n;
+                                       : normals.size( ) + vertices[i].n;
 
       InDist[i] = normals[p];
     }
@@ -199,7 +200,7 @@ std::optional<Model> CObjModel::LoadObjFromFile(const char *InFileName)
     for (size_t i = 0; i < InDist.size( ); ++i)
     {
       const auto p = vertices[i].uv > 0 ? vertices[i].uv - 1
-                                        : vertices.size( ) + vertices[i].uv;
+                                        : texcoords.size( ) + vertices[i].uv;
 
       InDist[i] = texcoords[p];
     }
